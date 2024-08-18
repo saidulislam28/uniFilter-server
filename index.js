@@ -25,28 +25,35 @@ async function run() {
     const productCollection = client.db('uniFilter').collection('products');
 
     app.get('/products', async (req, res) => {
-      const { page = 1, limit = 10, search = "", category = "", priceRange = "" } = req.query;
+      const { page = 1, limit = 10, search = "", category = "", priceRange = "", sort = "" } = req.query;
     
-      const query = {};
+      const query = {
+        productName: { $regex: search, $options: 'i' },
+        ...(category && { category }),
+        ...(priceRange && { 
+          price: { 
+            $gte: Number(priceRange.split('-')[0]), 
+            $lte: Number(priceRange.split('-')[1]) 
+          } 
+        }),
+      };
     
-      if (search) {
-        query.productName = { $regex: search, $options: "i" };
+      const sortOptions = {};
+      if (sort === "priceAsc") {
+        sortOptions.price = 1;
+      } else if (sort === "priceDesc") {
+        sortOptions.price = -1;
+      } else if (sort === "dateDesc") {
+        sortOptions.createdAt = -1;
       }
     
-     
+      const products = await productCollection
+        .find(query)
+        .sort(sortOptions)
+        .skip((page - 1) * limit)
+        .limit(Number(limit))
+        .toArray();
     
-      if (category) {
-        query.category = category;
-      }
-    
-      if (priceRange) {
-        const [min, max] = priceRange.split('-').map(Number);
-        query.price = { $gte: min, $lte: max };
-      }
-    
-      const skip = (page - 1) * limit;
-    
-      const products = await productCollection.find(query).skip(skip).limit(Number(limit)).toArray();
       const totalProducts = await productCollection.countDocuments(query);
       const totalPages = Math.ceil(totalProducts / limit);
     
