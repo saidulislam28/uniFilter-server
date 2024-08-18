@@ -28,10 +28,26 @@ async function run() {
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const searchTerm = req.query.search || '';
+      const brand = req.query.brand || '';
+      const category = req.query.category || '';
+      const priceRange = req.query.priceRange || '';
     
       const query = {
-        productName: { $regex: searchTerm, $options: 'i' }  // Case-insensitive search
+        productName: { $regex: searchTerm, $options: 'i' } // Case-insensitive search
       };
+    
+      if (brand) {
+        query.brandName = { $regex: brand, $options: 'i' };
+      }
+    
+      if (category) {
+        query.categoryName = { $regex: category, $options: 'i' };
+      }
+    
+      if (priceRange) {
+        const [minPrice, maxPrice] = priceRange.split('-').map(Number);
+        query.price = { $gte: minPrice, $lte: maxPrice };
+      }
     
       const skip = (page - 1) * limit;
     
@@ -48,6 +64,7 @@ async function run() {
         products: result
       });
     });
+    
     
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
