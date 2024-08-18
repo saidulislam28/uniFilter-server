@@ -25,44 +25,32 @@ async function run() {
     const productCollection = client.db('uniFilter').collection('products');
 
     app.get('/products', async (req, res) => {
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const searchTerm = req.query.search || '';
-      const brand = req.query.brand || '';
-      const category = req.query.category || '';
-      const priceRange = req.query.priceRange || '';
+      const { page = 1, limit = 10, search = "", category = "", priceRange = "" } = req.query;
     
-      const query = {
-        productName: { $regex: searchTerm, $options: 'i' } // Case-insensitive search
-      };
+      const query = {};
     
-      if (brand) {
-        query.brandName = { $regex: brand, $options: 'i' };
+      if (search) {
+        query.productName = { $regex: search, $options: "i" };
       }
     
+     
+    
       if (category) {
-        query.categoryName = { $regex: category, $options: 'i' };
+        query.category = category;
       }
     
       if (priceRange) {
-        const [minPrice, maxPrice] = priceRange.split('-').map(Number);
-        query.price = { $gte: minPrice, $lte: maxPrice };
+        const [min, max] = priceRange.split('-').map(Number);
+        query.price = { $gte: min, $lte: max };
       }
     
       const skip = (page - 1) * limit;
     
-      const cursor = productCollection.find(query).skip(skip).limit(limit);
-      const result = await cursor.toArray();
-    
+      const products = await productCollection.find(query).skip(skip).limit(Number(limit)).toArray();
       const totalProducts = await productCollection.countDocuments(query);
       const totalPages = Math.ceil(totalProducts / limit);
     
-      res.send({
-        totalProducts,
-        totalPages,
-        currentPage: page,
-        products: result
-      });
+      res.send({ products, totalPages });
     });
     
     
