@@ -44,6 +44,8 @@ async function run() {
         }),
       };
     
+// this code is  for sorting 
+
       const sortOptions = {};
       if (sort === "priceAsc") {
         sortOptions.price = 1;
@@ -62,6 +64,7 @@ async function run() {
     
       const totalProducts = await productCollection.countDocuments(query);
       const totalPages = Math.ceil(totalProducts / limit);
+    // send data for front end
     
       res.send({ products, totalPages });
     });
