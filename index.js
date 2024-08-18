@@ -8,11 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-
-console.log(process.env.DB_USER);
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.9imp1.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -24,25 +20,48 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+
+    const productCollection = client.db('uniFilter').collection('products');
+
+    app.get('/products', async (req, res) => {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const searchTerm = req.query.search || '';
+    
+      const query = {
+        productName: { $regex: searchTerm, $options: 'i' }  // Case-insensitive search
+      };
+    
+      const skip = (page - 1) * limit;
+    
+      const cursor = productCollection.find(query).skip(skip).limit(limit);
+      const result = await cursor.toArray();
+    
+      const totalProducts = await productCollection.countDocuments(query);
+      const totalPages = Math.ceil(totalProducts / limit);
+    
+      res.send({
+        totalProducts,
+        totalPages,
+        currentPage: page,
+        products: result
+      });
+    });
+    
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
+    
   }
 }
+
 run().catch(console.dir);
 
+app.get('/', (req, res) => {
+  res.send("filtering going on");
+});
 
-
-app.get('/', (req, res)=>{
-  res.send("filtering going on")
-
-})
-
-app.listen(port, ()=>{
+app.listen(port, () => {
   console.log(`filtering is going on ${port}`);
-})
+});
