@@ -1,6 +1,9 @@
 Server Side - MERN Project
+
 **Project Link** - https://unifilter-auth.web.app/
+
 **Project Name** - UniFilter
+
 **Overview**
 This repository contains the server-side code for the MERN project. The server is built using Node.js, Express.js, and MongoDB. It handles data management, authentication, and API endpoints for the application.
 
